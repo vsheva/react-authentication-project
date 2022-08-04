@@ -1,5 +1,5 @@
 import { useState, useRef, useContext} from 'react';
-
+import {useHistory} from "react-router-dom";
 import classes from './AuthForm.module.css';
 import AuthContext from "../../store/auth-context";
 
@@ -8,6 +8,8 @@ const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const emailInputRef = useRef();
   const passwordInputRef = useRef();
+  const history =useHistory(); //redirection
+
 
   const authCtx = useContext(AuthContext)
 
@@ -56,7 +58,8 @@ const submitHandler =(event)=>{
   }).then((data)=> {
     console.log("data in AuthForm", data)
 
-    authCtx.login(data.idToken) //*
+    history.replace("/"); //redirection
+    authCtx.login(data.idToken)//*
 
   }).catch((error)=> {
     alert(error.message)
@@ -95,8 +98,24 @@ const submitHandler =(event)=>{
 
 export default AuthForm;
 
+//console.log("history ", history)
+/**  {length: 7, action: 'POP', location: {…}, createHref: ƒ, push: ƒ, …}
+ action: "REPLACE"
+ block: ƒ block(prompt)
+ createHref: ƒ createHref(location)
+ go: ƒ go(n)
+ goBack: ƒ goBack()
+ goForward: ƒ goForward()
+ length: 7
+ listen: ƒ listen(listener)
+ location: {pathname: '/auth', search: '', hash: '', state: undefined, key: '4sdwh9'}
+ push: ƒ push(path, state)
+ replace: ƒ replace(path, state)
+ [[Prototype]]: Object
+ */
 
-/**
+
+/** token
  {kind: 'identitytoolkit#VerifyPasswordResponse', localId: 'qlXnvw3CEVfnCzY7DModeAayoOD2', email: 'test@test.com', displayName: '', idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjFhZjYwYzE3ZTJkNmY4YW…vb1iA8TgUiYXlJ63E0Wc3z8panO6m1lqEJSjhlCoWVsFwtx-g', …}
  displayName: ""
  email: "test@test.com"
