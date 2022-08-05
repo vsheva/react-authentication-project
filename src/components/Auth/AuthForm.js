@@ -1,62 +1,64 @@
-import {useState, useRef, useContext} from 'react';
-import {useHistory} from "react-router-dom";
+import { useState, useRef, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
 import classes from './AuthForm.module.css';
-import AuthContext from "../../store/auth-context";
+import AuthContext from '../../store/auth-context';
 
 const AuthForm = () => {
-    const [isLogin, setIsLogin] = useState(true);
-    const [isLoading, setIsLoading] = useState(false);
-    const emailInputRef = useRef();
-    const passwordInputRef = useRef();
-    const history = useHistory(); //redirection
-    const authCtx = useContext(AuthContext)
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const emailInputRef = useRef();
+  const passwordInputRef = useRef();
+  const history = useHistory(); //redirection
+  const authCtx = useContext(AuthContext);
 
-    const switchAuthModeHandler = () => {
-        setIsLogin((prevState) => !prevState);
-    };
+  const switchAuthModeHandler = () => {
+    setIsLogin(prevState => !prevState);
+  };
 
+  const submitHandler = event => {
+    event.preventDefault();
+    const eneteredEmail = emailInputRef.current.value;
+    const eneteredPassword = passwordInputRef.current.value;
+    setIsLoading(true);
 
-    const submitHandler = (event) => {
-        event.preventDefault();
-        const eneteredEmail = emailInputRef.current.value;
-        const eneteredPassword = passwordInputRef.current.value;
-        setIsLoading(true);
+    let url;
+    if (isLogin) {
+      url =
+        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBI82PbewgkJW5SBIDgWtvredDKE-hXGLo';
+    } else {
+      url =
+        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBI82PbewgkJW5SBIDgWtvredDKE-hXGLo';
+    }
 
-        let url;
-        if (isLogin) {
-            url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBI82PbewgkJW5SBIDgWtvredDKE-hXGLo"
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: eneteredEmail,
+        password: eneteredPassword,
+        returnSecureToken: true,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => {
+        setIsLoading(false);
+        if (res.ok) {
+          return res.json();
         } else {
-            url = "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBI82PbewgkJW5SBIDgWtvredDKE-hXGLo"
-        }
-
-        fetch(url, {
-            method: "POST",
-            body: JSON.stringify({
-                email: eneteredEmail,
-                password: eneteredPassword,
-                returnSecureToken: true,
-            }),
-            headers: {
-                "Content-Type": "application/json",
-            }
-        }).then(res => {
-            setIsLoading(false)
-            if (res.ok) {
-                return res.json();
-            } else {
-                return res.json().then((data) => {
-                    //console.log(data) //{error: {…}}    error: {code: 400, message: 'WEAK_PASSWORD : Password should be at least 6 characters', errors: Array(1)}
-                    let errorMessage = "Authentication failed!"
-                    /**if(data && data.error && data.error.message) {
+          return res.json().then(data => {
+            //console.log(data) //{error: {…}}    error: {code: 400, message: 'WEAK_PASSWORD : Password should be at least 6 characters', errors: Array(1)}
+            let errorMessage = 'Authentication failed!';
+            /**if(data && data.error && data.error.message) {
           errorMessage=data.error.message;
         }*/
 
-                    throw new Error(errorMessage);
-                });
-            }
-        }).then((data) => {
-
-            /** console.log("data in AuthForm", data)
+            throw new Error(errorMessage);
+          });
+        }
+      })
+      .then(data => {
+        /** console.log("data in AuthForm", data)
              {
        displayName: ""
        email: "test@test.com"
@@ -68,48 +70,42 @@ const AuthForm = () => {
         registered: true
     }*/
 
-            history.replace("/"); //redirection
+        history.replace('/'); //redirection
 
-            const expirationTimeInMs = new Date().getTime() + (+data.expiresIn * 1000); //1659712275925 + 3600 *1000
-            const expirationTime = new Date(expirationTimeInMs);
+        const expirationTimeInMs = new Date().getTime() + +data.expiresIn * 1000; //1659712275925 + 3600 *1000
+        const expirationTime = new Date(expirationTimeInMs);
 
-            // console.log("beforeRequest", localStorage.getItem("token"))//token
-            authCtx.login(data.idToken, expirationTime)//* ???
-            //console.log("afterRequest", localStorage.getItem("token"))//token
+        // console.log("beforeRequest", localStorage.getItem("token"))//token
+        authCtx.login(data.idToken, expirationTime); //* ???
+        //console.log("afterRequest", localStorage.getItem("token"))//token
+      })
+      .catch(error => {
+        alert(error.message);
+      });
+  };
 
-        }).catch((error) => {
-            alert(error.message)
-        })
-
-    };
-
-
-    return (
-        <section className={classes.auth}>
-            <h1>{isLogin ? 'Login' : 'Sign Up'}</h1>
-            <form onSubmit={submitHandler}>
-                <div className={classes.control}>
-                    <label htmlFor='email'>Your Email</label>
-                    <input type='email' id='email' required ref={emailInputRef}/>
-                </div>
-                <div className={classes.control}>
-                    <label htmlFor='password'>Your Password</label>
-                    <input type='password' id='password' required ref={passwordInputRef}/>
-                </div>
-                <div className={classes.actions}>
-                    {!isLoading && <button>{isLogin ? 'Login' : 'Create Account'}</button>}
-                    {isLoading && <p>Sending request...</p>}
-                    <button
-                        type='button'
-                        className={classes.toggle}
-                        onClick={switchAuthModeHandler}
-                    >
-                        {isLogin ? 'Create new account' : 'Login with existing account'}
-                    </button>
-                </div>
-            </form>
-        </section>
-    );
+  return (
+    <section className={classes.auth}>
+      <h1>{isLogin ? 'Login' : 'Sign Up'}</h1>
+      <form onSubmit={submitHandler}>
+        <div className={classes.control}>
+          <label htmlFor="email">Your Email</label>
+          <input type="email" id="email" required ref={emailInputRef} />
+        </div>
+        <div className={classes.control}>
+          <label htmlFor="password">Your Password</label>
+          <input type="password" id="password" required ref={passwordInputRef} />
+        </div>
+        <div className={classes.actions}>
+          {!isLoading && <button>{isLogin ? 'Login' : 'Create Account'}</button>}
+          {isLoading && <p>Sending request...</p>}
+          <button type="button" className={classes.toggle} onClick={switchAuthModeHandler}>
+            {isLogin ? 'Create new account' : 'Login with existing account'}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
 };
 
 export default AuthForm;
@@ -129,4 +125,3 @@ export default AuthForm;
  replace: ƒ replace(path, state)
  [[Prototype]]: Object
  */
-

@@ -8,5 +8,4 @@ const StartingPageContent = () => {
   );
 };
 
-
 export default StartingPageContent;
